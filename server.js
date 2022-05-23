@@ -1,5 +1,13 @@
 const express = require('express');
 const cors = require('cors');
+const mongoose = require('mongoose');
+
+const mongoDB = 'mongodb+srv://arman-gill:Tcs2Wipro@cluster0.cd628.mongodb.net/?retryWrites=true&w=majority';
+mongoose.connect(mongoDB).then(()=>{
+    console.log('connected');
+}
+)
+const Msg = require('./models/messages');
 
 const app = express();
 const http = require('http').createServer(app);
@@ -11,7 +19,7 @@ const io = require('socket.io')(http, {
 });
 
 app.get('/', (req, res) => {
-    res.send('Heello world');
+    res.send('Server is running');
 })
 
 let userList = new Map();
@@ -24,7 +32,12 @@ io.on('connection', (socket) => {
     socket.emit('user-list', [...userList.keys()]);
 
     socket.on('message', (msg) => {
-        socket.broadcast.emit('message-broadcast', {message: msg, userName: userName});
+        const message = new Msg({msg});
+        message.save().then(()=>{
+            socket.broadcast.emit('message-broadcast', {message: msg, userName: userName});
+        }
+        )
+        
     })
 
     socket.on('disconnect', (reason) => {
